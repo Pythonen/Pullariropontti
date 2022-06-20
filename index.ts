@@ -9,12 +9,12 @@ const app = new App({
     appToken: process.env.SLACK_APP_TOKEN 
 });
 
-const pull_block = [
+const pull_block = (channel: string) => [
     {
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": "Joku teki uuden pull requestin. \n\nKävisikö joku katsomassa sen läpi ettei se jää roikkumaan 🥺👉🏻👈"
+            "text": `Joku teki uuden pull requestin ja siitä tuli ilmoitus ${channel} kanavalle. \n\nKävisikö joku katsomassa sen läpi ettei se jää roikkumaan 🥺👉🏻👈`
         }
     },
     {
@@ -35,13 +35,9 @@ const pull_block = [
     }
 ]
 
-app.action('button_click', async ({ ack, body, context, say}) => {
+app.action('button_click', async ({ ack, body, say}) => {
     await ack();
-    await say(`@${body.user.id} kiitos 🥺`);
-});
-
-app.message('testi', async ({ message, say }) => {
-    console.log(message);
+    await say(`<@${body.user.id}> kiitos 🥺`);
 });
 
 app.message(async ({ message }) => {
@@ -49,8 +45,8 @@ app.message(async ({ message }) => {
     if (message.bot_profile?.name == 'GitHub') {
         //@ts-ignore
         if (message.attachments[0]?.pretext.includes('Pull request opened') || message.attachments[0]?.pretext.includes('Pull request reopened')) {
-            console.log(message);
-            app.client.chat.postMessage({channel: process.env.GENERAL_ID!, blocks: pull_block, text: 'Voisko joku pliis?🥺'});
+            const channel = await app.client.conversations.info({ channel: message.channel });
+            app.client.chat.postMessage({channel: process.env.GENERAL_ID!, blocks: pull_block(channel.channel?.name ?? '(nyt en ees tiiä)'), text: 'Voisko joku pliis?🥺'});
         }
     }
 });
